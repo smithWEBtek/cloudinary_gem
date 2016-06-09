@@ -207,6 +207,23 @@ describe Cloudinary::Utils do
         .to produce_url("#{upload_path}/c_crop,h_10,w_10/test")
               .and mutate_options_to({ :width => "10", :height => "10" })
     end
+    it "should support auto width" do
+      expect(["test", { :width => "auto:20", :crop => :fill }])
+          .to produce_url("#{upload_path}/c_fill,w_auto:20/test")
+                  .and empty_options
+      expect(["test", { :width => "auto:20:350", :crop => :fill }])
+          .to produce_url("#{upload_path}/c_fill,w_auto:20:350/test")
+                  .and empty_options
+      expect(["test", { :width => "auto:breakpoints", :crop => :fill }])
+          .to produce_url("#{upload_path}/c_fill,w_auto:breakpoints/test")
+                  .and empty_options
+      expect(["test", { :width => "auto:breakpoints_100_1900_20_15", :crop => :fill }])
+          .to produce_url("#{upload_path}/c_fill,w_auto:breakpoints_100_1900_20_15/test")
+                  .and empty_options
+      expect(["test", { :width => "auto:breakpoints:json", :crop => :fill }])
+          .to produce_url("#{upload_path}/c_fill,w_breakpoints/test")
+                  .and empty_options
+    end
   end
 
   it "should use x, y, radius, prefix, gravity and quality from options" do

@@ -50,14 +50,11 @@ class Cloudinary::Utils
     crop = options.delete(:crop)
     angle = build_array(options.delete(:angle)).join(".")
 
-    client_hints = options.has_key?(:client_hints) ? options[:client_hints] : Cloudinary.config[:client_hints]
-
     no_html_sizes = has_layer || angle.present? || crop.to_s == "fit" || crop.to_s == "limit" || crop.to_s == "lfill"
-    options.delete(:width) if width && (width.to_f < 1 || no_html_sizes || responsive_width)
-    options.delete(:width) if width == "auto" && !client_hints
+    options.delete(:width) if width && (width.to_f < 1 || no_html_sizes || width.to_s.start_with?("auto") || responsive_width)
     options.delete(:height) if height && (height.to_f < 1 || no_html_sizes || responsive_width)
 
-    width=height=nil if crop.nil? && !has_layer && width != "auto" && !allow_implicit_crop_mode
+    width=height=nil if crop.nil? && !has_layer && !width.to_s.start_with?("auto") && !allow_implicit_crop_mode
 
     background = options.delete(:background)
     background = background.sub(/^#/, 'rgb:') if background

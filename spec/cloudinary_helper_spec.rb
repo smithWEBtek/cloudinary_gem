@@ -110,6 +110,12 @@ RSpec.describe CloudinaryHelper do
           expect(test_tag['data-src']).to eq( "http://res.cloudinary.com/test/image/upload/w_auto/sample.jpg")
         end
       end
+      context "width" do
+        let(:options) { {:dpr => :auto, :cloud_name => "test", :width => "auto:breakpoints", :client_hints => true}}
+        it "supports auto width" do
+          expect(test_tag['src']).to eq( "http://res.cloudinary.com/test/image/upload/dpr_auto,w_auto:breakpoints/sample.jpg")
+        end
+      end
     end
   end
 
