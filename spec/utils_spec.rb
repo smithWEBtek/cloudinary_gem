@@ -231,7 +231,24 @@ describe Cloudinary::Utils do
       .to produce_url("#{upload_path}/g_center,p_a,q_0.4,r_3,x_1,y_2/test")
             .and empty_options
   end
+  context ":quality" do
+    it "support a percent value" do
+      expect(["test", { :x => 1, :y => 2, :radius => 3, :gravity => :center, :quality => 80, :prefix => "a" }])
+          .to produce_url("#{upload_path}/g_center,p_a,q_80,r_3,x_1,y_2/test")
 
+      expect(["test", { :x => 1, :y => 2, :radius => 3, :gravity => :center, :quality => "80:444", :prefix => "a" }])
+          .to produce_url("#{upload_path}/g_center,p_a,q_80:444,r_3,x_1,y_2/test")
+    end
+    it "should support auto value" do
+
+      expect(["test", { :x => 1, :y => 2, :radius => 3, :gravity => :center, :quality => "auto", :prefix => "a" }])
+          .to produce_url("#{upload_path}/g_center,p_a,q_auto,r_3,x_1,y_2/test")
+
+      expect(["test", { :x => 1, :y => 2, :radius => 3, :gravity => :center, :quality => "auto:good", :prefix => "a" }])
+          .to produce_url("#{upload_path}/g_center,p_a,q_auto:good,r_3,x_1,y_2/test")
+
+    end
+  end
   describe ":transformation" do
     it "should support named tranformation" do
       expect(["test", { :transformation => "blip" }])
