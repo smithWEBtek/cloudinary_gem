@@ -221,7 +221,7 @@ describe Cloudinary::Utils do
           .to produce_url("#{upload_path}/c_fill,w_auto:breakpoints_100_1900_20_15/test")
                   .and empty_options
       expect(["test", { :width => "auto:breakpoints:json", :crop => :fill }])
-          .to produce_url("#{upload_path}/c_fill,w_breakpoints/test")
+          .to produce_url("#{upload_path}/c_fill,w_auto:breakpoints:json/test")
                   .and empty_options
     end
   end
