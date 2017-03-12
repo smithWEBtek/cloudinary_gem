@@ -400,6 +400,7 @@ class Cloudinary::Utils
 
     transformation = transformation.gsub(%r(([^:])//), '\1/')
     if sign_url && ( !auth_token || auth_token.empty?)
+      raise(CloudinaryException, "Must supply api_secret") if (secret.nil? || secret.empty?)
       to_sign = [transformation, sign_version && version, source_to_sign].reject(&:blank?).join("/")
       i = 0
       while to_sign != CGI.unescape(to_sign) && i <10
