@@ -12,7 +12,7 @@ describe Cloudinary::Search do
 
     it "should always return same object in fluent interface" do
       instance  = Cloudinary::Search.new
-      ['expression','sort_by','max_results','next_cursor','facets','includes'].each do |method|
+      ['expression','sort_by','max_results','next_cursor','aggregate','includes'].each do |method|
         same_instance = instance.send(method,'emptyarg')
         expect(instance).to eq(same_instance)
       end
@@ -24,7 +24,7 @@ describe Cloudinary::Search do
     end
 
     it "should add sort_by to query" do
-      query = Cloudinary::Search.sort_by({'created_at':'asc'},{'updated_at':'desc'}).to_query
+      query = Cloudinary::Search.sort_by('created_at','asc').sort_by('updated_at','desc').to_query
       expect(query).to eq({sort_by:[{'created_at':'asc'},{'updated_at':'desc'}]})
     end
 
@@ -39,8 +39,8 @@ describe Cloudinary::Search do
     end
 
     it "should add facets arguments as array to query" do
-      query = Cloudinary::Search.facets('format','size_category').to_query
-      expect(query).to eq({facets:['format','size_category']})
+      query = Cloudinary::Search.aggregate('format','size_category').to_query
+      expect(query).to eq({aggregate:['format','size_category']})
     end
 
     it "should add includes to query" do
@@ -90,22 +90,22 @@ describe Cloudinary::Search do
     end
 
     it "should paginate resources limited by tag and orderd by ascending public_id" do 
-      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by({public_id:'asc'}).execute
+      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by('public_id','asc').execute
       expect(results['resources'].count).to eq 1
       expect(results['resources'][0]['public_id']).to eq test_id_1
       expect(results['total_count']).to eq 3
 
-      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by({public_id:'asc'}).next_cursor(results['next_cursor']).execute
+      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by('public_id','asc').next_cursor(results['next_cursor']).execute
       expect(results['resources'].count).to eq 1
       expect(results['resources'][0]['public_id']).to eq test_id_2
       expect(results['total_count']).to eq 3
 
-      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by({public_id:'asc'}).next_cursor(results['next_cursor']).execute
+      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by('public_id','asc').next_cursor(results['next_cursor']).execute
       expect(results['resources'].count).to eq 1
       expect(results['resources'][0]['public_id']).to eq test_id_3
       expect(results['total_count']).to eq 3
 
-      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by({public_id:'asc'}).next_cursor(results['next_cursor']).execute
+      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by('public_id','asc').next_cursor(results['next_cursor']).execute
       expect(results['resources'].count).to eq 0
     end
 
