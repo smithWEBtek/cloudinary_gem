@@ -160,7 +160,7 @@ class Cloudinary::Utils
     variables = options.delete(:variables)
     var_params = []
     options.each_pair do |key, value|
-      if key =~ /^\$/
+      if key =~ /^\$[a-zA-Z][a-zA-Z0-9]*$/
         var_params.push "#{key}_#{normalize_expression(value.to_s)}"
       end
     end
