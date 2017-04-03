@@ -205,13 +205,17 @@ class Cloudinary::Utils
     end
   end
 
+  EXP_PATTERN = Regexp.compile(Regexp.union(*CONDITIONAL_OPERATORS.keys).to_s + '(?=[ _])' + '|' + Regexp.union(*PREDEFINED_VARS.keys).to_s)
+
+  EXP_REPLACEMENT = PREDEFINED_VARS.merge(CONDITIONAL_OPERATORS)
+
   def self.normalize_expression(expression)
     if expression =~ /^!.+!$/ # quoted string
       expression
     else
       expression.to_s.gsub(
-        Regexp.union(*PREDEFINED_VARS.keys, *CONDITIONAL_OPERATORS.keys.reverse),
-        PREDEFINED_VARS.merge(CONDITIONAL_OPERATORS)
+          EXP_PATTERN,
+          EXP_REPLACEMENT
       ).gsub(/[ _]+/, "_")
     end
   end
