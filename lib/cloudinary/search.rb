@@ -3,7 +3,7 @@ class Cloudinary::Search
     @query_hash = {
       :sort_by    => [],
       :aggregate  => [],
-      :includes   => []
+      :include   => []
     }
   end
 
@@ -38,8 +38,8 @@ class Cloudinary::Search
     self
   end
 
-  def includes(*values)
-    @query_hash[:includes].push(*values)
+  def include(*values)
+    @query_hash[:include].push(*values)
     self
   end
 
