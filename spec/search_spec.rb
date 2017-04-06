@@ -43,7 +43,7 @@ describe Cloudinary::Search do
 
     it 'should add includes to query' do
       query = Cloudinary::Search.includes('context', 'tags').to_query
-      expect(query).to eq(includes: %w(context tags))
+      expect(query).to eq(include: %w(context tags))
     end
   end
 

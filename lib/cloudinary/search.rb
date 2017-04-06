@@ -38,7 +38,7 @@ class Cloudinary::Search
     self
   end
 
-  def include(*values)
+  def includes(*values)
     @query_hash[:include].push(*values)
     self
   end
@@ -49,6 +49,6 @@ class Cloudinary::Search
 
   def execute
     uri = 'resources/search'
-    Cloudinary::Api.call_api(:post, uri, to_query, :content_type=> :json)
+    Cloudinary::Api.call_api(:post, uri, to_query, :content_type => :json)
   end
 end
