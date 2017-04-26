@@ -6,7 +6,7 @@ describe Cloudinary::Api do
   include_context "cleanup", TIMESTAMP_TAG
   TEST_WIDTH = rand(1000)
   TEST_TRANSFOMATION = "c_scale,w_#{TEST_WIDTH}"
-  prefix = "api_test_#{Time.now.to_i}"
+  prefix = "api_test_#{SUFFIX}"
   test_id_1 = "#{prefix}_1"
   test_id_2   = "#{prefix}_2"
   test_id_3   = "#{prefix}_3"
@@ -157,9 +157,11 @@ describe Cloudinary::Api do
 
   end
 
-  it "should allow deleting resources" do
+  it "should allow deleting multiple resources and comma inclusive public IDs", :focus => true do
     expect(RestClient::Request).to receive(:execute).with(deep_hash_value( {[:payload, :public_ids] => ["apit_test", "test_id_2", "api_test3"]}))
     @api.delete_resources(["apit_test", "test_id_2", "api_test3"])
+    expect(RestClient::Request).to receive(:execute).with(deep_hash_value( {[:payload, :public_ids] => "apit_test,test_id_2,api_test3"}))
+    @api.delete_resources("apit_test,test_id_2,api_test3")
   end
 
   it "should allow deleting resource transformations" do
@@ -352,9 +354,13 @@ describe Cloudinary::Api do
     expect{Cloudinary::Api.update(result["public_id"], {:categorization => :illegal})}.to raise_error(Cloudinary::Api::BadRequest, /^Illegal value/)
   end
   
-  it "should support requesting detection" do
-    expect(RestClient::Request).to receive(:execute).with(deep_hash_value( [:payload, :detection] => "adv_face"))
-    Cloudinary::Api.update("public_id", {:detection => "adv_face"})
+  it "should support requesting detection with server notification", :focus => true do
+    expected = {
+      [:payload, :detection] => "adv_face",
+      [:payload, :notification_url] => "http://example.com"
+    }
+    expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+    Cloudinary::Api.update("public_id", {:detection => "adv_face", :notification_url => "http://example.com"})
   end
   
   it "should support requesting auto_tagging" do
@@ -436,5 +442,61 @@ describe Cloudinary::Api do
       expect(resource["public_id"]).to eq(publicId)
       expect(resource["access_mode"]).to eq('public')
     end
+  end
+
+  context "resource of type authenticated" do
+    i = 0
+    bytes = nil
+    publicId = ""
+    publish_resource_tag = "publish_resource_tag"
+    before(:each) do
+      i += 1
+      result = Cloudinary::Uploader.upload TEST_IMG, type: "authenticated", tags: [TEST_TAG, TIMESTAMP_TAG, publish_resource_tag], transformation: {width: 100*i, crop: "scale"}
+      publicId = result["public_id"]
+      expect(result["type"]).to eq("authenticated")
+    end
+
+    it "should publish resources by ids" do
+      result = Cloudinary::Api.publish_by_ids( [publicId])
+
+      expect(result["published"]).to be_an_instance_of(Array)
+      expect(result["published"].length).to eq(1)
+      
+      resource = result["published"][0]
+      
+      expect(resource["public_id"]).to eq(publicId)
+      expect(resource["type"]).to eq('upload')
+      
+      bytes = resource["bytes"]
+    end
+    it "should publish resources by prefix and overwrite" do
+      result = Cloudinary::Api.publish_by_prefix(publicId[0..-3], overwrite: true)
+
+      expect(result["published"]).to be_an_instance_of(Array)
+      expect(result["published"].length).to eq(1)
+      
+      resource = result["published"][0]
+      
+      expect(resource["public_id"]).to eq(publicId)
+      expect(resource["bytes"]).not_to eq(bytes)
+      expect(resource["type"]).to eq('upload')
+      
+      bytes = resource["bytes"]
+    end
+    it "should publish resources by tag and overwrite" do
+      result = Cloudinary::Api.publish_by_tag(publish_resource_tag, overwrite: true)
+
+      expect(result["published"]).to be_an_instance_of(Array)
+      expect(result["published"].length).to eq(1)
+      
+      resource = result["published"][0]
+      
+      expect(resource["public_id"]).to eq(publicId)
+      expect(resource["bytes"]).not_to eq(bytes)
+      expect(resource["type"]).to eq('upload')
+      
+      bytes = resource["bytes"]
+    end
+
   end
 end

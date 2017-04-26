@@ -89,7 +89,7 @@ class Cloudinary::Api
     uri            = "resources/#{resource_type}/#{type}/#{public_id}"
     update_options = {
       :tags               => options[:tags] && Cloudinary::Utils.build_array(options[:tags]).join(","),
-      :context            => Cloudinary::Utils.encode_hash(options[:context]),
+      :context            => Cloudinary::Utils.encode_context(options[:context]),
       :face_coordinates   => Cloudinary::Utils.encode_double_array(options[:face_coordinates]),
       :custom_coordinates => Cloudinary::Utils.encode_double_array(options[:custom_coordinates]),
       :moderation_status  => options[:moderation_status],
@@ -99,7 +99,8 @@ class Cloudinary::Api
       :detection          => options[:detection],
       :similarity_search  => options[:similarity_search],
       :background_removal => options[:background_removal],
-      :auto_tagging       => options[:auto_tagging] && options[:auto_tagging].to_f
+      :auto_tagging       => options[:auto_tagging] && options[:auto_tagging].to_f,
+      :notification_url   => options[:notification_url]
     }
     call_api(:post, uri, update_options, options)
   end
@@ -363,6 +364,24 @@ class Cloudinary::Api
 
   def self.transformation_string(transformation)
     transformation.is_a?(String) ? transformation : Cloudinary::Utils.generate_transformation_string(transformation.clone)
+  end
+
+  def self.publish_resources(options = {})
+    resource_type = options[:resource_type] || "image"
+    params = only(options, :public_ids, :prefix, :tag, :type, :overwrite, :invalidate)
+    call_api("post", "resources/#{resource_type}/publish_resources", params, options)
+  end
+
+  def self.publish_by_prefix(prefix, options = {})
+    return self.publish_resources(options.merge(:prefix => prefix))
+  end
+
+  def self.publish_by_tag(tag, options = {})
+    return self.publish_resources(options.merge(:tag => tag))
+  end
+
+  def self.publish_by_ids(publicIds, options = {})
+    return self.publish_resources(options.merge(:public_ids => publicIds))
   end
 
   def self.update_resources_access_mode(access_mode, by_key, value, options = {})

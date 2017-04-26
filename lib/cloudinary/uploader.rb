@@ -4,6 +4,8 @@ require 'json'
 
 class Cloudinary::Uploader
 
+  REMOTE_URL_REGEX = %r(^ftp:|^https?:|^s3:|^data:[^;]*;base64,([a-zA-Z0-9\/+\n=]+)$)
+
   # @deprecated use {Cloudinary::Utils.build_eager} instead
   def self.build_eager(eager)
     Cloudinary::Utils.build_eager(eager)
@@ -25,7 +27,7 @@ class Cloudinary::Uploader
       :callback                  => options[:callback],
       :categorization            => options[:categorization],
       :colors                    => Cloudinary::Utils.as_safe_bool(options[:colors]),
-      :context                   => Cloudinary::Utils.encode_hash(options[:context]),
+      :context                   => Cloudinary::Utils.encode_context(options[:context]),
       :custom_coordinates        => Cloudinary::Utils.encode_double_array(options[:custom_coordinates]),
       :detection                 => options[:detection],
       :discard_original_filename => Cloudinary::Utils.as_safe_bool(options[:discard_original_filename]),
@@ -71,7 +73,7 @@ class Cloudinary::Uploader
       params = build_upload_params(options)
       if file.is_a?(Pathname)
         params[:file] = File.open(file, "rb")
-      elsif file.respond_to?(:read) || file =~ /^ftp:|^https?:|^s3:|^data:[^;]*;base64,([a-zA-Z0-9\/+\n=]+)$/
+      elsif file.respond_to?(:read) || file.match(REMOTE_URL_REGEX)
         params[:file] = file
       else
         params[:file] = File.open(file, "rb")
@@ -89,7 +91,9 @@ class Cloudinary::Uploader
       public_id = public_id_or_options
       options   = old_options
     end
-    if file.is_a?(Pathname) || !file.respond_to?(:read)
+    if file.match(REMOTE_URL_REGEX)
+      return upload(file, options.merge(:public_id => public_id))
+    elsif file.is_a?(Pathname) || !file.respond_to?(:read)
       filename = file
       file     = File.open(file, "rb")
     else
@@ -255,6 +259,10 @@ class Cloudinary::Uploader
     return self.call_tags_api(tag, "replace", public_ids, options)
   end
 
+  def self.remove_all_tags(public_ids = [], options = {})
+    return self.call_tags_api(nil, "remove_all", public_ids, options)
+  end
+
   private
 
   def self.call_tags_api(tag, command, public_ids = [], options = {})
@@ -262,6 +270,28 @@ class Cloudinary::Uploader
       {
         :timestamp  => (options[:timestamp] || Time.now.to_i),
         :tag        => tag,
+        :public_ids => Cloudinary::Utils.build_array(public_ids),
+        :command    => command,
+        :type       => options[:type]
+      }
+    end
+  end
+
+  def self.add_context(context, public_ids = [], options = {})
+    return self.call_context_api(context, "add", public_ids, options)
+  end
+
+  def self.remove_all_context(public_ids = [], options = {})
+    return self.call_context_api(nil, "remove_all", public_ids, options)
+  end
+
+  private
+
+  def self.call_context_api(context, command, public_ids = [], options = {})
+    return call_api("context", options) do
+      {
+        :timestamp  => (options[:timestamp] || Time.now.to_i),
+        :context    => Cloudinary::Utils.encode_hash(context),
         :public_ids => Cloudinary::Utils.build_array(public_ids),
         :command    => command,
         :type       => options[:type]

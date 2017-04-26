@@ -205,14 +205,14 @@ class Cloudinary::Utils
     end
   end
 
+  EXP_REGEXP = Regexp.new(PREDEFINED_VARS.keys.join("|")+'|('+CONDITIONAL_OPERATORS.keys.reverse.map { |k| Regexp.escape(k) }.join('|')+')(?=[ _])')
+  EXP_REPLACEMENT = PREDEFINED_VARS.merge(CONDITIONAL_OPERATORS)
+
   def self.normalize_expression(expression)
     if expression =~ /^!.+!$/ # quoted string
       expression
     else
-      expression.to_s.gsub(
-        Regexp.union(*PREDEFINED_VARS.keys, *CONDITIONAL_OPERATORS.keys.reverse),
-        PREDEFINED_VARS.merge(CONDITIONAL_OPERATORS)
-      ).gsub(/[ _]+/, "_")
+      expression.to_s.gsub(EXP_REGEXP,EXP_REPLACEMENT).gsub(/[ _]+/, "_")
     end
   end
 
@@ -321,12 +321,13 @@ class Cloudinary::Utils
       unless breakpoint_settings.nil?
         breakpoint_settings = breakpoint_settings.clone
         transformation =  breakpoint_settings.delete(:transformation) || breakpoint_settings.delete("transformation")
+        format =  breakpoint_settings.delete(:format) || breakpoint_settings.delete("format")
         if transformation
-          breakpoint_settings[:transformation] = Cloudinary::Utils.generate_transformation_string(transformation.clone, true)
+          transformation = Cloudinary::Utils.generate_transformation_string(transformation.clone, true)
         end
+        breakpoint_settings[:transformation] = [transformation, format].compact.join("/")
       end
       breakpoint_settings
-
     end.to_json
   end
 
@@ -375,20 +376,19 @@ class Cloudinary::Utils
     source = source.to_s
     if !force_remote
       return original_source if (type.nil? || type == "asset") && source.match(%r(^https?:/)i)
-      if source.start_with?("/")
+      if type == "asset"
+        # config.static_image_support left for backwards compatibility
+        if (Cloudinary.config.static_file_support || Cloudinary.config.static_image_support) && defined?(Cloudinary::Static)
+          source, resource_type = Cloudinary::Static.public_id_and_resource_type_from_path(source)
+        end
+        return original_source unless source
+        source += File.extname(original_source) if !format
+      elsif source.start_with?("/")
         if source.start_with?("/images/")
           source = source.sub(%r(/images/), '')
         else
           return original_source
         end
-      end
-      @metadata ||= defined?(Cloudinary::Static) ? Cloudinary::Static.metadata : {}
-      if type == "asset" && @metadata["images/#{source}"]
-        return original_source if !Cloudinary.config.static_image_support
-        source = @metadata["images/#{source}"]["public_id"]
-        source += File.extname(original_source) if !format
-      elsif type == "asset"
-        return original_source # requested asset, but no metadata - probably local file. return.
       end
     end
 
@@ -450,6 +450,9 @@ class Cloudinary::Utils
       when resource_type.to_s == "image" && type.to_s == "private"
         resource_type = "private_images"
         type = nil
+      when resource_type.to_s == "image" && type.to_s == "authenticated"
+        resource_type = "authenticated_images"
+        type = nil
       when resource_type.to_s == "raw" && type.to_s == "upload"
         resource_type = "files"
         type = nil
@@ -457,7 +460,7 @@ class Cloudinary::Utils
         resource_type = "videos"
         type = nil
       else
-        raise(CloudinaryException, "URL Suffix only supported for image/upload, image/private and raw/upload")
+        raise(CloudinaryException, "URL Suffix only supported for image/upload, image/private, image/authenticated, video/upload and raw/upload")
       end
     end
     if use_root_path
@@ -668,9 +671,25 @@ class Cloudinary::Utils
     end
   end
 
+  # encodes a hash into pipe-delimited key-value pairs string
+  # @hash [Hash] key-value hash to be encoded
+  # @return [String] a joined string of all keys and values separated by a pipe character
+  # @private
   def self.encode_hash(hash)
     case hash
       when Hash then hash.map{|k,v| "#{k}=#{v}"}.join("|")
+      when nil then ""
+      else hash
+    end
+  end
+
+  # Same like encode_hash, with additional escaping of | and = characters
+  # @hash [Hash] key-value hash to be encoded
+  # @return [String] a joined string of all keys and values properly escaped and separated by a pipe character
+  # @private
+  def self.encode_context(hash)
+    case hash
+      when Hash then hash.map{|k,v| "#{k}=#{v.gsub(/([=|])/, '\\\\\1')}"}.join("|")
       when nil then ""
       else hash
     end
@@ -804,7 +823,9 @@ class Cloudinary::Utils
       :public_ids=>options[:public_ids] && Cloudinary::Utils.build_array(options[:public_ids]),
       :prefixes=>options[:prefixes] && Cloudinary::Utils.build_array(options[:prefixes]),
       :expires_at=>options[:expires_at],
-      :transformations => build_eager(options[:transformations])
+      :transformations => build_eager(options[:transformations]),
+      :skip_transformation_name=>Cloudinary::Utils.as_safe_bool(options[:skip_transformation_name]),
+      :allow_missing=>Cloudinary::Utils.as_safe_bool(options[:allow_missing])
     }
   end
 

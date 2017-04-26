@@ -99,11 +99,18 @@ describe Cloudinary::Uploader do
     result = Cloudinary::Uploader.upload(TEST_IMG, :eager =>"c_scale,w_2.0", :tags => [TEST_TAG, TIMESTAMP_TAG])
     expect(result["eager"].length).to be(1)
     expect(result).to have_deep_hash_values_of(["eager", 0, "transformation"] => "c_scale,w_2.0")
-    result = Cloudinary::Uploader.upload(TEST_IMG, :eager =>["c_scale,w_2.0", { :crop =>"crop", :width =>"0.5", :format => "tiff"}], :tags => [TEST_TAG, TIMESTAMP_TAG])
-    expect(result["eager"].length).to be(2)
+    result = Cloudinary::Uploader.upload(TEST_IMG, :eager =>[
+                          "c_scale,w_2.0",
+                          { :crop =>"crop", :width =>"0.5", :format => "tiff"},
+                          [[{:crop =>"crop", :width =>"0.5"},{:angle =>90}]],
+                          [[{:crop =>"crop", :width =>"0.5"},{:angle =>90}],"tiff"]
+                      ], :tags => [TEST_TAG, TIMESTAMP_TAG])
+    expect(result["eager"].length).to be(4)
     expect(result).to have_deep_hash_values_of(
                           ["eager", 0, "transformation"] => "c_scale,w_2.0",
-                          ["eager", 1, "transformation"] => "c_crop,w_0.5/tiff"
+                          ["eager", 1, "transformation"] => "c_crop,w_0.5/tiff",
+                          ["eager", 2, "transformation"] => "c_crop,w_0.5/a_90",
+                          ["eager", 3, "transformation"] => "c_crop,w_0.5/a_90/tiff"
                       )
   end
 
@@ -120,42 +127,94 @@ describe Cloudinary::Uploader do
 
   describe "tag" do
     describe "add_tag" do
-      it "should correctly handle tags" do
+      it "should correctly add tags" do
         expected ={
             :url => /.*\/tags/,
             [:payload, :tag] => "new_tag",
-            [:payload, :public_ids] => ["some_public_id"],
+            [:payload, :public_ids] => ["some_public_id1", "some_public_id2"],
             [:payload, :command] => "add"
         }
         expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
 
-        Cloudinary::Uploader.add_tag( "new_tag", "some_public_id")
+        Cloudinary::Uploader.add_tag( "new_tag", ["some_public_id1", "some_public_id2"])
       end
-      describe ":exclusive" do
-        it "should support :exclusive" do
-          expected ={
-              :url => /.*\/tags/,
-              [:payload, :tag] => "new_tag",
-              [:payload, :public_ids] => ["some_public_id"],
-              [:payload, :command] => "set_exclusive"
-          }
-          expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
-
-          Cloudinary::Uploader.add_tag( "new_tag", "some_public_id", :exclusive => true)
-        end
-      end
-
-
-
     end
 
-      # Cloudinary::Uploader.add_tag("#{new_tag}_2", result["public_id"])
-      # expect(Cloudinary::Api.resource(result["public_id"])["tags"]).to match_array(["#{new_tag}_1", "#{new_tag}_2", TEST_TAG, TIMESTAMP_TAG])
-      # Cloudinary::Uploader.remove_tag("#{new_tag}_1", result["public_id"])
-      # expect(Cloudinary::Api.resource(result["public_id"])["tags"]).to match_array(["#{new_tag}_2", TEST_TAG, TIMESTAMP_TAG])
-      # Cloudinary::Uploader.replace_tag("#{new_tag}_3", result["public_id"])
-      # expect(Cloudinary::Api.resource(result["public_id"])["tags"]).to match_array(["#{new_tag}_3"])
+    describe "remove_tag" do
+      it "should correctly remove tag" do
+        expected ={
+            :url => /.*\/tags/,
+            [:payload, :tag] => "tag",
+            [:payload, :public_ids] => ["some_public_id1", "some_public_id2"],
+            [:payload, :command] => "remove"
+        }
+        expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+
+        Cloudinary::Uploader.remove_tag("tag", ["some_public_id1", "some_public_id2"])
+      end
     end
+
+    describe "replace_tag" do
+      it "should correctly replace tag" do
+        expected ={
+            :url => /.*\/tags/,
+            [:payload, :tag] => "tag",
+            [:payload, :public_ids] => ["some_public_id1", "some_public_id2"],
+            [:payload, :command] => "replace"
+        }
+        expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+
+        Cloudinary::Uploader.replace_tag("tag", ["some_public_id1", "some_public_id2"])
+      end
+    end
+
+    describe "remove_all_tags" do
+      it "should correctly remove all tags" do
+        expected ={
+            :url => /.*\/tags/,
+            [:payload, :public_ids] => ["some_public_id1", "some_public_id2"],
+            [:payload, :command] => "remove_all"
+        }
+        expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+
+        Cloudinary::Uploader.remove_all_tags(["some_public_id1", "some_public_id2"])
+      end
+    end
+
+  end
+
+
+  describe "context", :focus => true do
+    describe "add_context" do
+      it "should correctly add context", :focus => true do
+        expected ={
+            :url => /.*\/context/,
+            [:payload, :context] => "key1=value1|key2=value2",
+            [:payload, :public_ids] => ["some_public_id1", "some_public_id2"],
+            [:payload, :command] => "add"
+        }
+        expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+
+        Cloudinary::Uploader.add_context( {:key1 => :value1, :key2 => :value2}, ["some_public_id1", "some_public_id2"])
+      end
+    end
+
+    describe "remove_all_context" do
+      it "should correctly remove all context", :focus => true do
+        expected ={
+            :url => /.*\/context/,
+            [:payload, :public_ids] => ["some_public_id1", "some_public_id2"],
+            [:payload, :command] => "remove_all",
+            [:payload, :type] => "private"
+
+        }
+        expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+
+        Cloudinary::Uploader.remove_all_context(["some_public_id1", "some_public_id2"], :type => "private")
+      end
+    end
+
+  end
 
 
   
@@ -193,7 +252,7 @@ describe Cloudinary::Uploader do
   end
   
   it "should allow sending context" do
-    context = {"caption" => "some caption", "alt" => "alternative"}
+    context = {"key1"=>'value1', "key2" => 'valu\e2', "key3" => 'val=u|e3', "key4" => 'val\=ue'}
     result = Cloudinary::Uploader.upload(TEST_IMG, { :context => context, :tags => [TEST_TAG, TIMESTAMP_TAG]})
     info = Cloudinary::Api.resource(result["public_id"], {:context => true})
     expect(info["context"]).to eq({"custom" => context})
@@ -236,6 +295,14 @@ describe Cloudinary::Uploader do
     expect(result["height"]).to eq(1400)
     expect(result["format"]).to eq("bmp")
   end
+
+  it "should allow fallback of upload large with remote url to regular upload", :focus => true do
+    file = "http://cloudinary.com/images/old_logo.png"
+    result = Cloudinary::Uploader.upload_large(file, :chunk_size => 5243000, :tags => [TEST_TAG, TIMESTAMP_TAG])
+    expect(result).to_not be_nil
+    expect(result["width"]).to eq(TEST_IMG_W)
+    expect(result["height"]).to eq(TEST_IMG_H)
+  end
   
   context "unsigned" do
     after do
@@ -271,13 +338,22 @@ describe Cloudinary::Uploader do
   end
 
   context ":responsive_breakpoints" do
-    context ":create_derived" do
-      result = Cloudinary::Uploader.upload(TEST_IMG, :responsive_breakpoints => { :create_derived => false }, :tags => [TEST_TAG, TIMESTAMP_TAG])
-      it 'should return a responsive_breakpoints in the response' do
-        expect(result).to include('responsive_breakpoints')
+    context ":create_derived with transformation and format conversion" do
+      expected ={
+          :url => /.*\/upload$/,
+          [:payload, :responsive_breakpoints] => %r("transformation":"e_sepia/jpg"),
+          [:payload, :responsive_breakpoints] => %r("transformation":"gif"),
+          [:payload, :responsive_breakpoints] => %r("create_derived":true)
+      }
+      it 'should return a proper responsive_breakpoints hash in the response' do
+        expect(RestClient::Request).to receive(:execute).with(deep_hash_value(expected))
+        Cloudinary::Uploader.upload(TEST_IMG, responsive_breakpoints:[{transformation:{effect: "sepia"}, format:"jpg", bytes_step:20000, create_derived: true, :min_width => 200, :max_width => 1000, :max_images => 20},{format:"gif", create_derived:true, bytes_step:20000, :min_width => 200, :max_width => 1000, :max_images => 20}], :tags => [TEST_TAG, TIMESTAMP_TAG])
       end
     end
   end
+
+
+
   describe 'explicit' do
 
     context ":invalidate" do
