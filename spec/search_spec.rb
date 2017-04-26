@@ -10,7 +10,7 @@ describe Cloudinary::Search do
 
     it 'should always return same object in fluent interface' do
       instance = Cloudinary::Search.new
-      %w(expression sort_by max_results next_cursor aggregate includes).each do |method|
+      %w(expression sort_by max_results next_cursor aggregate with_field).each do |method|
         same_instance = instance.send(method, 'emptyarg')
         expect(instance).to eq(same_instance)
       end
@@ -36,21 +36,19 @@ describe Cloudinary::Search do
       expect(query).to eq(next_cursor: 'format:jpg')
     end
 
-    it 'should add facets arguments as array to query' do
-      query = Cloudinary::Search.aggregate('format', 'size_category').to_query
+    it 'should add aggregations arguments as array to query' do
+      query = Cloudinary::Search.aggregate('format').aggregate('size_category').to_query
       expect(query).to eq(aggregate: %w(format size_category))
     end
 
-    it 'should add includes to query' do
-      query = Cloudinary::Search.includes('context', 'tags').to_query
-      expect(query).to eq(include: %w(context tags))
+    it 'should add with_field to query' do
+      query = Cloudinary::Search.with_field('context').with_field('tags').to_query
+      expect(query).to eq(with_field: %w(context tags))
     end
   end
 
   context 'integration' do
     include_context 'cleanup', TIMESTAMP_TAG
-    TEST_WIDTH = rand(1000)
-    TEST_TRANSFOMATION = "c_scale,w_#{TEST_WIDTH}".freeze
     prefix = "api_test_#{Time.now.to_i}"
     test_id_1 = "#{prefix}_1"
     test_id_2   = "#{prefix}_2"
@@ -106,14 +104,14 @@ describe Cloudinary::Search do
     end
 
     it 'should include context' do
-      results = Cloudinary::Search.expression("tags:#{TEST_TAG}").includes('context').execute
+      results = Cloudinary::Search.expression("tags:#{TEST_TAG}").with_field('context').execute
       expect(results['resources'].count).to eq 3
       results['resources'].each do |res|
         expect(res['context'].keys).to eq ['stage']
       end
     end
     it 'should include context, tags and image_metadata' do
-      results = Cloudinary::Search.expression("tags:#{TEST_TAG}").includes('context', 'tags', 'image_metadata').execute
+      results = Cloudinary::Search.expression("tags:#{TEST_TAG}").with_field('context').with_field('tags').with_field('image_metadata').execute
       expect(results['resources'].count).to eq 3
       results['resources'].each do |res|
         expect(res['context'].keys).to eq ['stage']

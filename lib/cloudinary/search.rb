@@ -3,7 +3,7 @@ class Cloudinary::Search
     @query_hash = {
       :sort_by    => [],
       :aggregate  => [],
-      :include   => []
+      :with_field   => []
     }
   end
 
@@ -33,13 +33,13 @@ class Cloudinary::Search
     self
   end
 
-  def aggregate(*values)
-    @query_hash[:aggregate].push(*values)
+  def aggregate(value)
+    @query_hash[:aggregate].push(value)
     self
   end
 
-  def includes(*values)
-    @query_hash[:include].push(*values)
+  def with_field(value)
+    @query_hash[:with_field].push(value)
     self
   end
 
@@ -47,8 +47,9 @@ class Cloudinary::Search
     @query_hash.select { |_, value| !value.nil? && !(value.is_a?(Array) && value.empty?) }
   end
 
-  def execute
+  def execute(options = {})
+    options[:content_type] = 'application/json'
     uri = 'resources/search'
-    Cloudinary::Api.call_api(:post, uri, to_query, :content_type => :json)
+    Cloudinary::Api.call_api(:post, uri, to_query, options)
   end
 end
