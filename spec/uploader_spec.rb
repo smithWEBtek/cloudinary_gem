@@ -91,7 +91,7 @@ describe Cloudinary::Uploader do
     expect(RestClient::Request).to receive(:execute).with(deep_hash_value( [:payload, :public_id] => "sample", [:payload, :eager] => "c_scale,w_2.0"))
     result = Cloudinary::Uploader.explicit("sample", :type=>"upload", :eager=>[{:crop=>"scale", :width=>"2.0"}])
   end
-  
+
   it "should support eager" do
     result = Cloudinary::Uploader.upload(TEST_IMG, :eager =>[{ :crop =>"scale", :width =>"2.0"}], :tags => [TEST_TAG, TIMESTAMP_TAG])
     expect(result["eager"].length).to be(1)
@@ -217,28 +217,28 @@ describe Cloudinary::Uploader do
   end
 
 
-  
+
   it "should correctly handle unique_filename" do
     result = Cloudinary::Uploader.upload(TEST_IMG, :use_filename => true, :tags => [TEST_TAG, TIMESTAMP_TAG])
     expect(result["public_id"]).to match(/logo_[a-zA-Z0-9]{6}/)
     result = Cloudinary::Uploader.upload(TEST_IMG, :use_filename => true, :unique_filename => false, :tags => [TEST_TAG, TIMESTAMP_TAG])
     expect(result["public_id"]).to eq("logo")
   end
-  
+
   it "should allow whitelisted formats if allowed_formats", :allowed=>true do
     result = Cloudinary::Uploader.upload(TEST_IMG, :allowed_formats => ["png"], :tags => [TEST_TAG, TIMESTAMP_TAG])
     expect(result["format"]).to eq("png")
   end
-  
+
   it "should prevent non whitelisted formats from being uploaded if allowed_formats is specified", :allowed=>true do
     expect{Cloudinary::Uploader.upload(TEST_IMG, :allowed_formats => ["jpg"], :tags => [TEST_TAG, TIMESTAMP_TAG])}.to raise_error(CloudinaryException)
   end
-  
+
   it "should allow non whitelisted formats if type is specified and convert to that type", :allowed=>true do
     result = Cloudinary::Uploader.upload(TEST_IMG, :allowed_formats => ["jpg"], :format => "jpg", :tags => [TEST_TAG, TIMESTAMP_TAG])
     expect(result["format"]).to eq("jpg")
   end
-  
+
   it "should allow sending face coordinates" do
     coordinates = [[120, 30, 109, 150], [121, 31, 110, 151]]
     result_coordinates = [[120, 30, 109, 51], [121, 31, 110, 51]]
@@ -250,32 +250,32 @@ describe Cloudinary::Uploader do
     info = Cloudinary::Api.resource(result["public_id"], {:faces => true})
     expect(info["faces"]).to eq(different_coordinates)
   end
-  
+
   it "should allow sending context" do
     context = {"key1"=>'value1', "key2" => 'valu\e2', "key3" => 'val=u|e3', "key4" => 'val\=ue'}
     result = Cloudinary::Uploader.upload(TEST_IMG, { :context => context, :tags => [TEST_TAG, TIMESTAMP_TAG]})
     info = Cloudinary::Api.resource(result["public_id"], {:context => true})
     expect(info["context"]).to eq({"custom" => context})
   end
-  
+
   it "should support requesting manual moderation" do
     result = Cloudinary::Uploader.upload(TEST_IMG, { :moderation => :manual, :tags => [TEST_TAG, TIMESTAMP_TAG]})
     expect(result["moderation"][0]["status"]).to eq("pending")
     expect(result["moderation"][0]["kind"]).to eq("manual")
   end
-    
+
   it "should support requesting raw conversion" do
     expect{Cloudinary::Uploader.upload("spec/docx.docx", {:resource_type => :raw, :raw_convert => :illegal, :tags => [TEST_TAG, TIMESTAMP_TAG]})}.to raise_error(CloudinaryException, /Illegal value|not a valid/)
   end
-  
+
   it "should support requesting categorization" do
     expect{Cloudinary::Uploader.upload(TEST_IMG, { :categorization => :illegal, :tags => [TEST_TAG, TIMESTAMP_TAG]})}.to raise_error(CloudinaryException, /Illegal value|not a valid|is invalid/)
   end
-  
+
   it "should support requesting detection" do
     expect{Cloudinary::Uploader.upload(TEST_IMG, { :detection => :illegal, :tags => [TEST_TAG, TIMESTAMP_TAG]})}.to raise_error(CloudinaryException, /Illegal value|not a valid/)
   end
-  
+
   it "should support requesting auto_tagging" do
     expect{Cloudinary::Uploader.upload(TEST_IMG, { :auto_tagging => 0.5, :tags => [TEST_TAG, TIMESTAMP_TAG]})}.to raise_error(CloudinaryException, /Must use/)
   end
@@ -303,12 +303,12 @@ describe Cloudinary::Uploader do
     expect(result["width"]).to eq(TEST_IMG_W)
     expect(result["height"]).to eq(TEST_IMG_H)
   end
-  
+
   context "unsigned" do
     after do
       Cloudinary.class_variable_set(:@@config, nil)
     end
-    
+
     it "should support unsigned uploading using presets", :upload_preset => true do
       preset = Cloudinary::Api.create_upload_preset(:folder => "test_folder_upload", :unsigned => true, :tags => [TEST_TAG, TIMESTAMP_TAG])
 

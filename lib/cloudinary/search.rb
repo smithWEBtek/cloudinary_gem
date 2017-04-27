@@ -43,13 +43,13 @@ class Cloudinary::Search
     self
   end
 
-  def to_query
+  def to_h
     @query_hash.select { |_, value| !value.nil? && !(value.is_a?(Array) && value.empty?) }
   end
 
   def execute(options = {})
-    options[:content_type] = 'application/json'
+    options[:content_type] = :json
     uri = 'resources/search'
-    Cloudinary::Api.call_api(:post, uri, to_query, options)
+    Cloudinary::Api.call_api(:post, uri, to_h, options)
   end
 end
