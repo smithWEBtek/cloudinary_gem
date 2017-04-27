@@ -318,9 +318,9 @@ class Cloudinary::Api
     api_url.sub!(%r(^(https?://)), "\\1#{api_key}:#{api_secret}@")
 
     headers = { "User-Agent" => Cloudinary::USER_AGENT }
-    if options[:content_type]=='application/json'
+    if options[:content_type]== :json 
       payload = params.to_json
-      headers.merge!("Content-Type"=> options[:content_type], "Accept"=> options[:content_type])
+      headers.merge!("Content-Type"=> 'application/json', "Accept"=> 'application/json')
     else
       payload = params.reject { |k, v| v.nil? || v=="" }
     end

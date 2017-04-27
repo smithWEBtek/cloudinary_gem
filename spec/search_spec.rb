@@ -98,9 +98,7 @@ describe Cloudinary::Search do
       expect(results['resources'].count).to eq 1
       expect(results['resources'][0]['public_id']).to eq test_id_3
       expect(results['total_count']).to eq 3
-
-      results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by('public_id', 'asc').next_cursor(results['next_cursor']).execute
-      expect(results['resources'].count).to eq 0
+      expect(results['next_cursor']).to be_nil
     end
 
     it 'should include context' do

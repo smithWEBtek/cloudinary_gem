@@ -48,7 +48,7 @@ class Cloudinary::Search
   end
 
   def execute(options = {})
-    options[:content_type] = 'application/json'
+    options[:content_type] = :json
     uri = 'resources/search'
     Cloudinary::Api.call_api(:post, uri, to_query, options)
   end
