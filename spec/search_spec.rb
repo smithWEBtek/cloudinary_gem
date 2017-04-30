@@ -83,7 +83,7 @@ describe Cloudinary::Search do
       expect(results['resources'].count).to eq 1
     end
 
-    it 'should paginate resources limited by tag and orderd by ascending public_id' do
+    it 'should paginate resources limited by tag and ordered by ascending public_id' do
       results = Cloudinary::Search.max_results(1).expression("tags:#{TEST_TAG}").sort_by('public_id', 'asc').execute
       expect(results['resources'].count).to eq 1
       expect(results['resources'][0]['public_id']).to eq test_id_1
