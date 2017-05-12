@@ -146,6 +146,7 @@ RSpec.describe CloudinaryHelper do
 
 
     before :each do
+      Cloudinary::Utils.instance_variable_set :@metadata, nil
       @static_support = Cloudinary.config.static_image_support
       @static_file = Cloudinary::Static::METADATA_FILE
 
@@ -160,15 +161,15 @@ RSpec.describe CloudinaryHelper do
       end
       it "should not transform images staring with /images unless asset is found and static_support is true" do
         Cloudinary.config.static_image_support = false
-        # expect(helper.image_path('/images/foo')).to eq('/images/foo')
-        # expect(helper.image_path('images/foo')).to eq('images/foo')
-        Cloudinary.config.static_image_support = true
+        expect(helper.image_path('/images/foo.jpg')).to eq('/images/foo.jpg')
+        expect(helper.image_path('some-folder/foo.gif')).to eq("/images/some-folder/foo.gif")
         Cloudinary::Static::METADATA_FILE = "spec/sample_asset_file.tsv"
-        expect(helper.image_path('/images/foo')).to eq("http://res.cloudinary.com/sdk-test/image/asset/images-foo")
-        expect(helper.image_path('some-folder/foo')).to eq("/images/some-folder/foo")
-        Cloudinary::Static::METADATA_FILE = @static_file
-        expect(helper.image_path('/images/foo')).to eq("http://res.cloudinary.com/sdk-test/image/asset/images-foo")
-        expect(helper.image_path('some-folder/foo')).to eq('/images/some-folder/foo')
+        Cloudinary::Utils.instance_variable_set :@metadata, nil
+        expect(helper.image_path('/images/foo.jpg')).to eq("/images/foo.jpg")
+        expect(helper.image_path('some-folder/foo.gif')).to eq("/images/some-folder/foo.gif")
+        Cloudinary.config.static_image_support = true
+        expect(helper.image_path('/images/foo.jpg')).to eq("http://res.cloudinary.com/sdk-test/image/asset/images-foo.jpg")
+        expect(helper.image_path('some-folder/foo.gif')).to eq('/images/some-folder/foo.gif')
       end
     end
   end
