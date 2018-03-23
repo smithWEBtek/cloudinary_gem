@@ -25,5 +25,9 @@ Basic::Application.configure do
   config.action_controller.allow_forgery_protection    = false
 
   # Print deprecation notices to the stderr
-  config.active_support.deprecation = :stderr
+	config.active_support.deprecation = :stderr
+	
+	config.eager_load = false
+
+	
 end

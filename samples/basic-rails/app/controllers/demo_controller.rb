@@ -16,10 +16,28 @@ before_action :check_configuration
     render
   end
 
-	def resources_index
-		res = Cloudinary::Api.resources(max_results: 100)
+
+	# Assuming that you have a valid set of Cloudinary credentials
+	# Assuming that you have downloaded your 'cloudinary.yml' file and put in 'app/config' folder of this app
+	# Assuming you have installed the Cloudinary gem (  gem 'cloudinary' ) in Gemfile
+	# Assuming you have some uploaded images in your Cloudinary account
+	# Assuming you get results back at the cmd line using curl: 
+	# $ curl 
+
+	def get_resources
+		res = Cloudinary::Api.resources(resource: 'image', format: 'pdf', max_results: 500)
 		@resources = res['resources']
+		@pdfs = res['resources'].select{|r|r["format"]== 'pdf'}
+	end
+
+	def resources_index
+		get_resources
 		render 'demo/resources'
+	end
+	
+	def pdfs_index
+		get_resources
+		render 'demo/pdfs'
 	end
 
   private
