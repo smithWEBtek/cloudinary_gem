@@ -1,6 +1,6 @@
 class DemoController < ApplicationController
 
-  before_filter :check_configuration
+before_action :check_configuration
 
   def check_configuration
     render 'configuration_missing' if Cloudinary.config.api_key.blank?
@@ -15,6 +15,12 @@ class DemoController < ApplicationController
     # We can now display the uploaded images and apply transformations on them.
     render
   end
+
+	def resources_index
+		res = Cloudinary::Api.resources(max_results: 100)
+		@resources = res['resources']
+		render 'demo/resources'
+	end
 
   private
 

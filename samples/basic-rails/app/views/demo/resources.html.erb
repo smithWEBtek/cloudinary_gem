@@ -1,0 +1,13 @@
+<% @resources.each do |res| %>
+	<hr />
+	<ul>
+		<li>public_id: <%= res["public_id"] %></li>
+		<li>created_at: <%= res["created_at"] %></li>
+		<li>width: <%= res["width"] %></li>
+		<li>height: <%= res["height"] %></li>
+		<li>url: <%= link_to 'show_image', res["url"] %></li>
+		<li>secure_url: <%= link_to 'show_image', res["secure_url"] %></li>
+	</ul>
+	<% end %>
+<hr />
+ 
